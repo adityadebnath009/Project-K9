@@ -5,6 +5,7 @@ Hack Matrix 2026 - Hacktober
 """
 
 import json
+import datetime
 from typing import Any, Optional
 from fastapi import FastAPI, HTTPException, status, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -89,6 +90,8 @@ async def scan_target(request: ScanRequest) -> MasterScanResponse:
     and returns an evidence-grounded MasterScanResponse committed to Web3.
     """
     try:
+        if request.target.startswith("upi://") or request.input_type == InputType.QR_CODE:
+            return await orchestrate_qr_scan(request.target)
         return await orchestrate_full_scan(target=request.target)
     except (ValueError, TypeError) as err:
         raise HTTPException(
@@ -171,6 +174,8 @@ async def verify_on_chain_report(request: Web3VerifyRequest) -> dict[str, Any]:
         "report_hash": request.report_hash,
         "is_valid": is_valid,
         "tamper_detected": not is_valid and request.payload is not None,
+        "block_number": report_data.get("block_number") if report_data else None,
+        "timestamp": report_data.get("timestamp") if report_data else None,
         "on_chain_record": report_data,
     }
 
@@ -192,7 +197,8 @@ async def export_stix_threat_indicators() -> dict[str, Any]:
             "type": "indicator",
             "spec_version": "2.1",
             "id": f"indicator--{r.get('report_hash', '')[:36].replace('0x', '')}",
-            "created": r.get("timestamp"),
+            "created": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "valid_from": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "name": f"Malicious Domain: {r.get('domain')}",
             "pattern": f"[domain-name:value = '{r.get('domain')}']",
             "pattern_type": "stix",

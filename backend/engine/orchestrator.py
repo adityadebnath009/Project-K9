@@ -143,7 +143,7 @@ async def orchestrate_full_scan(
         correlation_report = corr_res
 
         # Calculate Score from Message Signals
-        if nlp_res.is_coercive:
+        if nlp_res.urgency_score > 0:
             threat_score += min(50, nlp_res.urgency_score)
             keywords = nlp_res.matched_phrases or nlp_res.urgency_keywords
             identified_indicators.extend([f"URGENCY_LURE: {kw}" for kw in keywords])
@@ -151,6 +151,9 @@ async def orchestrate_full_scan(
         if corr_res.has_campaign_match:
             threat_score += 30
             identified_indicators.append(f"CAMPAIGN_CLUSTER: {corr_res.primary_campaign}")
+
+        if ai_res.threat_category and ai_res.threat_category != "Benign Information":
+            threat_score += 35
 
         if ai_res.mitre_attack_techniques:
             identified_indicators.extend([f"MITRE: {t.id} ({t.name})" for t in ai_res.mitre_attack_techniques])

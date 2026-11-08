@@ -76,6 +76,21 @@ def decode_qr_image(image_input: Union[bytes, str]) -> QrInspectionSchema:
 
     try:
         if isinstance(image_input, str):
+            clean_str = image_input.strip()
+            if clean_str.lower().startswith("upi://pay"):
+                upi_info = parse_upi_payment_uri(clean_str)
+                return QrInspectionSchema(
+                    decoded=True,
+                    raw_payload=clean_str,
+                    payload_type="upi_payment",
+                    upi_details=upi_info,
+                )
+            if clean_str.startswith(("http://", "https://")) and "base64," not in clean_str:
+                return QrInspectionSchema(
+                    decoded=True,
+                    raw_payload=clean_str,
+                    payload_type="url",
+                )
             # Strip data URL prefix if present (e.g., data:image/png;base64,...)
             clean_b64 = image_input.split("base64,")[-1].strip()
             raw_bytes = base64.b64decode(clean_b64)

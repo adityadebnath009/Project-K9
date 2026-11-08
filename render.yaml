@@ -1,0 +1,29 @@
+services:
+  # 1. FastAPI Threat Intelligence Backend
+  - type: web
+    name: k9-sentinel-backend
+    env: docker
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+
+  # 2. Next.js SOC Dashboard Frontend
+  - type: web
+    name: k9-sentinel-frontend
+    env: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 20.17.0
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: k9-sentinel-backend
+          property: host

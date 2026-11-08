@@ -25,6 +25,9 @@ PROTECTED_BRANDS: dict[str, str] = {
     "google": "Google LLC",
     "microsoft": "Microsoft Corporation",
     "apple": "Apple Inc.",
+    "icloud": "Apple iCloud",
+    "ebay": "eBay Inc.",
+    "emudhra": "eMudhra Technologies",
     "amazon": "Amazon.com",
     "netflix": "Netflix Inc.",
     "facebook": "Meta Platforms",
@@ -54,6 +57,14 @@ DECEPTIVE_TOKENS: set[str] = {
     "login", "signin", "verify", "verification", "secure", "security",
     "update", "kyc", "account", "support", "billing", "authenticate",
     "free", "bonus", "reward", "recharge", "blocked", "unblock"
+}
+
+OFFICIAL_BRAND_DOMAINS: set[str] = {
+    "airtel.in", "airtel.com", "airtelxstream.in", "apple.com", "icloud.com",
+    "google.com", "microsoft.com", "paypal.com", "sbi.co.in", "onlinesbi.sbi",
+    "hdfcbank.com", "icicibank.com", "axisbank.com", "chase.com", "amazon.com",
+    "netflix.com", "facebook.com", "instagram.com", "github.com", "jio.com",
+    "ebay.com", "ebay.de", "emudhra.com"
 }
 
 
@@ -103,6 +114,24 @@ def audit_domain_threats(url_or_domain: str) -> DomainThreatSchema:
     subdomain = extracted.subdomain
     full_host = f"{extracted.domain}.{extracted.suffix}" if extracted.suffix else domain_name
 
+    # Whitelist official verified corporate domains
+    if full_host in OFFICIAL_BRAND_DOMAINS or any(full_host.endswith(f".{d}") for d in OFFICIAL_BRAND_DOMAINS):
+        return DomainThreatSchema(
+            hostname=full_host,
+            domain_name=domain_name,
+            is_homograph=False,
+            is_typosquatted=False,
+            impersonated_brand=None,
+            brand_owner=None,
+            levenshtein_distance=None,
+            is_shortener=False,
+            deceptive_tokens=[],
+            entropy=calculate_shannon_entropy(domain_name),
+            high_entropy_flag=False,
+            threat_detected=False,
+            severity="SAFE",
+        )
+
     is_shortener = full_host in KNOWN_URL_SHORTENERS
 
     # 1. Homograph / Punycode Check
@@ -125,11 +154,18 @@ def audit_domain_threats(url_or_domain: str) -> DomainThreatSchema:
         if domain_name == brand_key:
             continue
 
-        tokens_to_test = [domain_name] + [t for t in domain_name.split("-") if len(t) >= 3]
+        subdomain_tokens = [s for s in subdomain.split(".") if len(s) >= 3]
+        tokens_to_test = [domain_name] + [t for t in domain_name.split("-") if len(t) >= 3] + subdomain_tokens
 
         for token in tokens_to_test:
             dist = levenshtein_distance(token, brand_key)
-            if dist in (1, 2) and len(token) >= 4:
+            if dist == 0:
+                is_typosquatted = True
+                impersonated_brand = brand_key
+                brand_owner = brand_label
+                closest_distance = 0
+                break
+            if dist in (1, 2) and len(token) >= 3:
                 is_typosquatted = True
                 impersonated_brand = brand_key
                 brand_owner = brand_label
@@ -140,13 +176,11 @@ def audit_domain_threats(url_or_domain: str) -> DomainThreatSchema:
             break
 
         if brand_key in domain_name or brand_key in subdomain:
-            has_deceptive_token = any(token in domain_name or token in subdomain for token in DECEPTIVE_TOKENS)
-            if has_deceptive_token:
-                is_typosquatted = True
-                impersonated_brand = brand_key
-                brand_owner = brand_label
-                closest_distance = 0
-                break
+            is_typosquatted = True
+            impersonated_brand = brand_key
+            brand_owner = brand_label
+            closest_distance = 0
+            break
 
     matched_tokens = [token for token in DECEPTIVE_TOKENS if token in domain_name or token in subdomain]
     entropy = calculate_shannon_entropy(domain_name)

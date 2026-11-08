@@ -6,15 +6,25 @@ import { CertificateNode } from '@/types/api';
 
 interface CertificateTreeProps {
   chain: CertificateNode[];
+  tlsDetails?: {
+    connected: boolean;
+    tlsVersion?: string;
+    cipher?: string;
+    sans?: string[];
+    isSelfSigned?: boolean;
+    hostnameMatches?: boolean;
+    error?: string;
+  };
 }
 
-export const CertificateTree: React.FC<CertificateTreeProps> = ({ chain }) => {
+export const CertificateTree: React.FC<CertificateTreeProps> = ({ chain, tlsDetails }) => {
   const [selectedCertIndex, setSelectedCertIndex] = useState<number>(() => {
     // Default to the first revoked or warning cert, otherwise leaf cert
     const revokedIdx = chain.findIndex((c) => c.status === 'revoked' || c.status === 'invalid');
     return revokedIdx !== -1 ? revokedIdx : chain.length - 1;
   });
   const [copiedFingerprint, setCopiedFingerprint] = useState(false);
+  const [showSans, setShowSans] = useState(false);
 
   const selectedCert = chain[selectedCertIndex] || chain[0];
 
@@ -113,6 +123,36 @@ export const CertificateTree: React.FC<CertificateTreeProps> = ({ chain }) => {
         })}
       </div>
 
+      {/* Live TLS Telemetry Strip */}
+      {tlsDetails && (
+        <div className="p-3 rounded-lg bg-zinc-900/60 border border-zinc-800 text-xs font-mono flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+              tlsDetails.connected ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800' : 'bg-rose-950/60 text-rose-300 border border-rose-800'
+            }`}>
+              {tlsDetails.connected ? 'TLS HANDSHAKE ESTABLISHED' : 'TLS OFFLINE / UNREACHABLE'}
+            </span>
+            {tlsDetails.tlsVersion && (
+              <span className="text-zinc-400">Version: <strong className="text-white">{tlsDetails.tlsVersion}</strong></span>
+            )}
+            {tlsDetails.cipher && (
+              <span className="text-zinc-400">Cipher: <strong className="text-white">{tlsDetails.cipher}</strong></span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {tlsDetails.isSelfSigned ? (
+              <span className="px-2 py-0.5 rounded text-[10px] bg-rose-950 text-rose-300 border border-rose-800">
+                SELF-SIGNED CA
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 rounded text-[10px] bg-zinc-800 text-zinc-300">
+                PUBLIC TRUST STORE
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Selected Certificate Deep Inspector Panel */}
       {selectedCert && (
         <div className="p-4 rounded-md bg-ground border border-border-subtle space-y-3">
@@ -164,6 +204,36 @@ export const CertificateTree: React.FC<CertificateTreeProps> = ({ chain }) => {
               <span className="text-zinc-300">{selectedCert.signatureAlgorithm}</span>
             </div>
           </div>
+
+          {/* Real Subject Alternative Names (SANs) if present */}
+          {(tlsDetails?.sans && tlsDetails.sans.length > 0) && (
+            <div className="pt-2 border-t border-zinc-900 font-mono text-xs">
+              <div className="flex items-center justify-between pb-1">
+                <span className="text-[10px] text-zinc-500 font-bold">
+                  SUBJECT ALTERNATIVE NAMES (SANs) ({tlsDetails.sans.length} domains):
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowSans(!showSans)}
+                  className="text-[10px] text-sky-400 hover:text-sky-300 underline"
+                >
+                  {showSans ? 'Hide' : 'Expand All'}
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pt-1">
+                {(showSans ? tlsDetails.sans : tlsDetails.sans.slice(0, 6)).map((san, i) => (
+                  <span key={i} className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-300">
+                    {san}
+                  </span>
+                ))}
+                {!showSans && tlsDetails.sans.length > 6 && (
+                  <span className="text-[10px] text-zinc-500 self-center">
+                    +{tlsDetails.sans.length - 6} more
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Fingerprint block with copy button */}
           <div className="pt-2 border-t border-zinc-900">

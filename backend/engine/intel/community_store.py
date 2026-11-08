@@ -21,6 +21,35 @@ DATA_FILE_PATH = os.path.join(
 )
 
 _LOCK = threading.Lock()
+_INCIDENTS_CACHE: Optional[list[dict]] = None
+
+
+def _init_cache() -> list[dict]:
+    """Initializes in-memory incidents cache from disk or default seed."""
+    global _INCIDENTS_CACHE
+    if _INCIDENTS_CACHE is not None:
+        return _INCIDENTS_CACHE
+
+    _ensure_data_file()
+    try:
+        with open(DATA_FILE_PATH, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+            _INCIDENTS_CACHE = raw if isinstance(raw, list) else []
+    except (OSError, json.JSONDecodeError):
+        _INCIDENTS_CACHE = []
+
+    return _INCIDENTS_CACHE
+
+
+def _persist_cache() -> None:
+    """Attempts to flush current cache to disk without failing if read-only."""
+    if _INCIDENTS_CACHE is None:
+        return
+    try:
+        with open(DATA_FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump(_INCIDENTS_CACHE, f, indent=2)
+    except OSError:
+        pass
 
 
 def _ensure_data_file() -> None:
@@ -29,20 +58,18 @@ def _ensure_data_file() -> None:
     if not os.path.exists(data_dir):
         os.makedirs(data_dir, exist_ok=True)
     if not os.path.exists(DATA_FILE_PATH):
-        with open(DATA_FILE_PATH, "w", encoding="utf-8") as f:
-            json.dump([], f, indent=2)
+        try:
+            with open(DATA_FILE_PATH, "w", encoding="utf-8") as f:
+                json.dump([], f, indent=2)
+        except OSError:
+            pass
 
 
 def get_all_incidents() -> list[CommunityIncident]:
     """Retrieves all community reported incidents ordered by most recent."""
-    _ensure_data_file()
     with _LOCK:
-        try:
-            with open(DATA_FILE_PATH, "r", encoding="utf-8") as f:
-                raw_list = json.load(f)
-                return [CommunityIncident(**item) for item in raw_list]
-        except (OSError, json.JSONDecodeError, ValueError):
-            return []
+        cache = _init_cache()
+        return [CommunityIncident(**item) for item in cache]
 
 
 def get_incident_by_id(incident_id: str) -> Optional[CommunityIncident]:
@@ -56,45 +83,35 @@ def get_incident_by_id(incident_id: str) -> Optional[CommunityIncident]:
 
 def add_incident(req: CreateIncidentRequest) -> CommunityIncident:
     """Creates a new community report with user experience and victim status."""
-    _ensure_data_file()
-    incidents = get_all_incidents()
-
-    # Determine domain from target
-    parsed = urlparse(req.target if "://" in req.target else f"https://{req.target}")
-    domain = parsed.hostname or req.target.split("/")[0]
-
-    incident_id = f"inc-{len(incidents) + 1:03d}"
-    fake_votes = 1 if req.initial_vote == "fake" else 0
-    legit_votes = 1 if req.initial_vote == "legit" else 0
-
-    new_incident = CommunityIncident(
-        id=incident_id,
-        target=req.target,
-        domain=domain,
-        category=req.category,
-        reporter=req.reporter or "Anonymous Reporter",
-        timestamp=datetime.now(timezone.utc).isoformat(),
-        user_experience=req.user_experience,
-        victim_status=req.victim_status,
-        fake_votes=fake_votes,
-        legit_votes=legit_votes,
-        consensus_status="Active Verification",
-        countdown_hours_remaining=24,
-    )
-
     with _LOCK:
-        try:
-            with open(DATA_FILE_PATH, "r", encoding="utf-8") as f:
-                current_data = json.load(f)
-        except (OSError, json.JSONDecodeError):
-            current_data = []
+        cache = _init_cache()
 
-        current_data.insert(0, new_incident.model_dump())
+        # Determine domain from target
+        parsed = urlparse(req.target if "://" in req.target else f"https://{req.target}")
+        domain = parsed.hostname or req.target.split("/")[0]
 
-        with open(DATA_FILE_PATH, "w", encoding="utf-8") as f:
-            json.dump(current_data, f, indent=2)
+        incident_id = f"inc-{len(cache) + 1:03d}"
+        fake_votes = 1 if req.initial_vote == "fake" else 0
+        legit_votes = 1 if req.initial_vote == "legit" else 0
 
-    return new_incident
+        new_incident = CommunityIncident(
+            id=incident_id,
+            target=req.target,
+            domain=domain,
+            category=req.category,
+            reporter=req.reporter or "Anonymous Reporter",
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            user_experience=req.user_experience,
+            victim_status=req.victim_status,
+            fake_votes=fake_votes,
+            legit_votes=legit_votes,
+            consensus_status="Active Verification",
+            countdown_hours_remaining=24,
+        )
+
+        cache.insert(0, new_incident.model_dump())
+        _persist_cache()
+        return new_incident
 
 
 def vote_on_incident(incident_id: str, vote_type: str) -> Optional[CommunityIncident]:
@@ -102,16 +119,11 @@ def vote_on_incident(incident_id: str, vote_type: str) -> Optional[CommunityInci
     Submits a vote ('fake' or 'legit') for a community incident.
     Recalculates consensus status once quorum is reached.
     """
-    _ensure_data_file()
     with _LOCK:
-        try:
-            with open(DATA_FILE_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        except (OSError, json.JSONDecodeError):
-            return None
+        cache = _init_cache()
 
         matched = None
-        for item in data:
+        for item in cache:
             if item.get("id") == incident_id:
                 if vote_type == "fake":
                     item["fake_votes"] = item.get("fake_votes", 0) + 1
@@ -135,8 +147,7 @@ def vote_on_incident(incident_id: str, vote_type: str) -> Optional[CommunityInci
                 break
 
         if matched:
-            with open(DATA_FILE_PATH, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
+            _persist_cache()
             return CommunityIncident(**matched)
 
         return None

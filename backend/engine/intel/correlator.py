@@ -71,10 +71,18 @@ def correlate_threat_campaigns(
     matched_campaigns: list[CorrelatedCampaign] = []
 
     for sig in CAMPAIGN_SIGNATURES:
-        matched_keywords = [kw for kw in sig["keywords"] if kw in combined_corpus]
-        matched_brands = [b for b in sig["target_brands"] if b in combined_corpus]
+        import re
+        matched_keywords = [
+            kw for kw in sig["keywords"] 
+            if re.search(r"\b" + re.escape(kw) + r"\b", combined_corpus)
+        ]
+        matched_brands = [
+            b for b in sig["target_brands"] 
+            if re.search(r"\b" + re.escape(b) + r"\b", combined_corpus)
+        ]
 
-        if matched_keywords:
+        # Require at least 2 keyword signals or keyword + brand to prevent spurious false positives
+        if len(matched_keywords) >= 2 or (matched_keywords and matched_brands):
             confidence = sig["base_confidence"]
             if matched_brands:
                 confidence = min(100, confidence + 10)

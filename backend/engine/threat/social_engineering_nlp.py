@@ -32,6 +32,12 @@ URGENCY_PATTERNS: dict[str, list[str]] = {
         r"claim your (cashback|bonus|refund|lottery) now",
         r"expires (today|soon|in \d+ minutes?)",
     ],
+    "utility_disconnection": [
+        r"(electricity|power|water|gas) (will be|is|supply will be)? ?(disconnected|cut off|terminated|suspended)",
+        r"(unpaid|overdue|pending) (bill|electricity bill|power bill)",
+        r"disconnect(ed)? (tonight|today|immediately|within)",
+        r"power (supply )?will be disconnected",
+    ],
 }
 
 

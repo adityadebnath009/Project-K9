@@ -1,96 +1,145 @@
 'use client';
 
-import React from 'react';
-import { ShieldAlert, FileCode, Activity } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Shield, FileCode, ExternalLink, Activity } from 'lucide-react';
+import { checkBackendHealth, API_BASE_URL } from '@/lib/api';
+import { STIXExportModal } from '@/components/collaborative/STIXExportModal';
 
-interface NavbarProps {
-  onOpenStix: () => void;
-  backendStatus: { online: boolean; latencyMs?: number; version?: string };
-  activeTab: string;
-  onSelectTab: (tabId: string) => void;
-}
+export const Navbar: React.FC = () => {
+  const pathname = usePathname();
+  const [backendStatus, setBackendStatus] = useState<{ online: boolean; latencyMs?: number; version?: string }>({
+    online: false,
+  });
+  const [stixOpen, setStixOpen] = useState(false);
+  const [stixBundle, setStixBundle] = useState<Record<string, unknown> | null>(null);
 
-export const Navbar: React.FC<NavbarProps> = ({
-  onOpenStix,
-  backendStatus,
-  activeTab,
-  onSelectTab,
-}) => {
-  const navTabs = [
-    { id: 'overview', label: '01 // Overview' },
-    { id: 'crypto', label: '02 // Crypto & eMudhra' },
-    { id: 'heuristics', label: '03 // Heuristics' },
-    { id: 'radar', label: '04 // Radar & Guard' },
-    { id: 'theory', label: '05 // Knowledge Base' },
+  useEffect(() => {
+    checkBackendHealth().then(setBackendStatus);
+    const interval = setInterval(() => {
+      checkBackendHealth().then(setBackendStatus);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleOpenStix = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/threats/stix`);
+      if (res.ok) {
+        const data = await res.json();
+        setStixBundle(data);
+      } else {
+        throw new Error('Fallback');
+      }
+    } catch {
+      setStixBundle({
+        type: 'bundle',
+        id: `bundle--k9-sentinel-${Date.now()}`,
+        spec_version: '2.1',
+        objects: [
+          {
+            type: 'indicator',
+            spec_version: '2.1',
+            id: 'indicator--mock-sample-1',
+            name: 'eMudhra Bug 2083449 Compromised Sub-CA',
+            pattern: "[x509-certificate:hashes.'SHA-256' = 'EE:43:09:88:...']",
+            pattern_type: 'stix',
+          },
+        ],
+      });
+    }
+    setStixOpen(true);
+  };
+
+  const navLinks = [
+    { href: '/', label: 'Scanner' },
+    { href: '/crypto', label: 'Certificate Trust' },
+    { href: '/threats', label: 'Threat Heuristics' },
+    { href: '/radar', label: 'Community Radar' },
+    { href: '/quishing', label: 'QR Guard' },
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border-subtle bg-ground/90 backdrop-blur-md px-4 lg:px-8 py-2.5">
-      <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
-        {/* Logo & Version */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => onSelectTab('overview')}
-            className="flex items-center gap-2 px-2.5 py-1 rounded bg-surface border border-border-subtle hover:border-border-active transition-colors text-left"
-          >
-            <ShieldAlert className="w-4 h-4 text-emerald-400" />
-            <span className="font-mono font-bold tracking-wider text-sm text-zinc-100">
-              K9-SENTINEL
-            </span>
-            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
-              v1.0.4-PROD
-            </span>
-          </button>
+    <>
+      <header className="sticky top-0 z-40 w-full border-b border-zinc-800/80 bg-[#09090b]/80 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          {/* Logo & Identity */}
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center group-hover:border-zinc-700 transition-colors">
+                <Shield className="w-4 h-4 text-sky-400" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-semibold text-sm tracking-tight text-zinc-100 flex items-center gap-1.5">
+                  K9 Sentinel
+                  <span className="text-[10px] font-mono text-zinc-500 font-normal">v1.0</span>
+                </span>
+                <span className="text-[11px] text-zinc-500 hidden sm:inline">Trust Intelligence</span>
+              </div>
+            </Link>
 
-          {/* System Status Pill */}
-          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-950/30 border border-emerald-900/60 text-emerald-400 text-xs font-mono">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="tracking-wide">SYSTEM: ARMED</span>
+            {/* Live Backend Indicator */}
+            <div className="ml-2 flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-[11px] text-zinc-400 font-mono">
+              {backendStatus.online ? (
+                <>
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-emerald-400 font-medium">Live API</span>
+                  {backendStatus.latencyMs && (
+                    <span className="text-zinc-500 hidden md:inline">· {backendStatus.latencyMs}ms</span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <span className="h-2 w-2 rounded-full bg-amber-500/80"></span>
+                  <span className="text-amber-400">Offline / Standalone</span>
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Backend connectivity indicator */}
-          <div className="hidden md:flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 px-2 py-0.5 rounded bg-surface border border-zinc-800">
-            <Activity className="w-3 h-3 text-sky-400" />
-            <span>
-              {backendStatus.online
-                ? `API: ONLINE (${backendStatus.latencyMs}ms)`
-                : 'MOCK ENGINE: ARMED'}
-            </span>
+          {/* Clean Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1">
+            {navLinks.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`px-3 py-1.5 rounded-md text-xs transition-colors ${
+                    isActive
+                      ? 'bg-zinc-800 text-zinc-100 font-medium'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Action Button: STIX 2.1 Export */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenStix}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs font-medium transition-colors"
+            >
+              <FileCode className="w-3.5 h-3.5 text-sky-400" />
+              <span>STIX 2.1</span>
+            </button>
           </div>
         </div>
+      </header>
 
-        {/* Navigation Tab Links */}
-        <nav className="hidden lg:flex items-center gap-1 text-xs text-zinc-400 font-mono">
-          {navTabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onSelectTab(tab.id)}
-                className={`px-2.5 py-1 rounded transition-colors ${
-                  isActive
-                    ? 'text-zinc-100 bg-zinc-800 font-semibold border border-zinc-700 shadow-sm'
-                    : 'hover:text-zinc-200 hover:bg-zinc-800/40 text-zinc-400'
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Single action — Export STIX */}
-        <button
-          onClick={onOpenStix}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono font-medium text-emerald-300 bg-emerald-950/40 border border-emerald-800/60 hover:bg-emerald-900/40 hover:border-emerald-700 active:scale-[0.98] transition-all"
-        >
-          <FileCode className="w-3.5 h-3.5" />
-          <span>Export STIX 2.1</span>
-        </button>
-      </div>
-    </header>
+      {/* Standard STIX Modal */}
+      <STIXExportModal
+        isOpen={stixOpen}
+        bundle={stixBundle}
+        onClose={() => setStixOpen(false)}
+      />
+    </>
   );
 };

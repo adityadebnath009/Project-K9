@@ -74,7 +74,7 @@ export const TyposquattingCard: React.FC<TyposquattingCardProps> = ({
       </div>
 
       {/* Heuristic Metrics & Homograph Flag */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-mono">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
         <div className="p-2.5 rounded bg-black/50 border border-zinc-800">
           <span className="text-zinc-500 text-[10px] block">LEVENSHTEIN DISTANCE:</span>
           <span className="text-sm font-bold text-zinc-200">
@@ -94,26 +94,63 @@ export const TyposquattingCard: React.FC<TyposquattingCardProps> = ({
         </div>
 
         <div className="p-2.5 rounded bg-black/50 border border-zinc-800">
-          <span className="text-zinc-500 text-[10px] block">RISK LEVEL:</span>
+          <span className="text-zinc-500 text-[10px] block">SHANNON ENTROPY:</span>
+          <span className="text-sm font-bold text-zinc-200">
+            {typosquatting.entropy !== undefined && typosquatting.entropy > 0 ? `${typosquatting.entropy.toFixed(3)} bits` : 'Normal (2.3 bits)'}
+          </span>
+        </div>
+
+        <div className="p-2.5 rounded bg-black/50 border border-zinc-800">
+          <span className="text-zinc-500 text-[10px] block">DGA ALGORITHM:</span>
           <span
             className={`text-sm font-bold uppercase ${
-              typosquatting.riskLevel === 'critical'
-                ? 'text-rose-400'
-                : typosquatting.riskLevel === 'high'
-                ? 'text-amber-400'
-                : 'text-emerald-400'
+              typosquatting.highEntropyFlag ? 'text-rose-400' : 'text-emerald-400'
             }`}
           >
-            {typosquatting.riskLevel}
+            {typosquatting.highEntropyFlag ? 'DGA SUSPECTED' : 'CLEAN'}
           </span>
         </div>
       </div>
 
-      {/* Homoglyph breakdown if present */}
-      {typosquatting.homoglyphBreakdown && (
-        <div className="p-2.5 rounded bg-rose-950/20 border border-rose-900/50 font-mono text-xs text-rose-300">
-          <span className="font-bold">HOMOGLYPH BREAKDOWN: </span>
-          <span>{typosquatting.homoglyphBreakdown}</span>
+      {/* Visual Homoglyph Character Diff if Homograph is detected */}
+      {typosquatting.punycodeHomoglyph && (
+        <div className="p-3.5 rounded-md bg-rose-950/20 border border-rose-900/60 font-mono text-xs space-y-2">
+          <div className="flex items-center justify-between font-bold text-rose-300">
+            <span>CYRILLIC PUNYCODE HOMOGLYPH CHARACTER DIFF</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-950 border border-rose-800">IDN Homograph Attack</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className="p-2 rounded bg-black/60 border border-rose-900/40">
+              <span className="text-zinc-500 text-[10px] block">SPOOFED PUNYCODE DECODING:</span>
+              <div className="text-rose-300 font-bold text-sm">
+                {typosquatting.punycodeRepresentation || typosquatting.targetDomain}
+              </div>
+              <span className="text-[10px] text-zinc-400">Contains Cyrillic homoglyphs: e.g. &apos;р&apos; (U+0440) replacing Latin &apos;p&apos; (U+0070)</span>
+            </div>
+
+            <div className="p-2 rounded bg-black/60 border border-emerald-900/40">
+              <span className="text-zinc-500 text-[10px] block">GENUINE CANONICAL ASCII BRAND:</span>
+              <div className="text-emerald-300 font-bold text-sm">
+                {typosquatting.legitimateDomain}
+              </div>
+              <span className="text-[10px] text-zinc-400">Pure ASCII: &apos;p&apos; (U+0070) Latin Small Letter P</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deceptive Tokens Chips if any */}
+      {typosquatting.deceptiveTokens && typosquatting.deceptiveTokens.length > 0 && (
+        <div className="p-2.5 rounded bg-amber-950/20 border border-amber-900/50 font-mono text-xs space-y-1">
+          <span className="text-[10px] text-amber-400 font-bold block">DECEPTIVE KEYWORD TOKENS DETECTED:</span>
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {typosquatting.deceptiveTokens.map((tok, i) => (
+              <span key={i} className="px-2 py-0.5 rounded bg-amber-950/70 border border-amber-800/80 text-amber-300 text-[10px]">
+                {tok}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

@@ -24,6 +24,11 @@ export interface CertificateNode {
   status: 'trusted' | 'warning' | 'revoked' | 'invalid';
   statusReason?: string;
   oneCrlRevoked?: boolean;
+  sans?: string[];
+  isSelfSigned?: boolean;
+  tlsVersion?: string;
+  cipher?: string;
+  error?: string;
 }
 
 export interface EmudhraAudit {
@@ -43,6 +48,8 @@ export interface EmudhraAudit {
   scalarDerivationTimeMs: number;
   rubyAlert: string;
   technicalNotes: string;
+  discoveryMethod?: string;
+  keyType?: string;
 }
 
 export interface RSAKeyAudit {
@@ -53,6 +60,8 @@ export interface RSAKeyAudit {
   signatureAlgorithm: string;
   isAlgorithmDeprecated: boolean;
   publicExponent: number;
+  issues?: string[];
+  isRsa?: boolean;
 }
 
 export interface CTLogEntry {
@@ -78,6 +87,9 @@ export interface TyposquattingAudit {
   registrar: string;
   domainAgeDays: number;
   riskLevel: 'critical' | 'high' | 'medium' | 'low';
+  entropy?: number;
+  highEntropyFlag?: boolean;
+  deceptiveTokens?: string[];
 }
 
 export interface DOMHarvestingAudit {
@@ -153,4 +165,71 @@ export interface TargetScanResult {
   domHarvesting: DOMHarvestingAudit;
   urgencyNLP: UrgencyNLPAudit;
   securityPosture: SecurityPostureAudit;
+  web3Commitment?: {
+    reportHash?: string;
+    transactionHash?: string;
+    blockNumber?: number;
+    contractAddress?: string;
+    verificationUrl?: string;
+    network?: string;
+    isCommitted?: boolean;
+  };
+  aiBriefing?: {
+    threatCategory?: string;
+    targetedEntity?: string;
+    analystRecommendation?: string;
+    aiEngine?: string;
+    psychologicalTriggers?: string[];
+    mitreAttackTechniques?: Array<{
+      id: string;
+      name: string;
+      tactic: string;
+      description?: string;
+    }>;
+    extractedIndicators?: string[];
+  };
+  threatIntel?: {
+    blacklisted: boolean;
+    source: string;
+    matchesCount: number;
+    findings?: any[];
+  };
+  correlationReport?: {
+    hasCampaignMatch: boolean;
+    primaryCampaign?: string | null;
+    correlationNotes?: string;
+    campaigns?: any[];
+  };
+  recommendedPrecautions?: string[];
+  identifiedIndicators?: string[];
+  tlsDetails?: {
+    connected: boolean;
+    tlsVersion?: string;
+    cipher?: string;
+    sans?: string[];
+    isSelfSigned?: boolean;
+    hostnameMatches?: boolean;
+    error?: string;
+  };
+  qrInspection?: any;
+}
+
+export interface QrScanResult {
+  target: string;
+  decodedData: string;
+  isUpi: boolean;
+  upiDetails?: {
+    payeeVpa?: string;
+    payeeName?: string;
+    amount?: string;
+    currency?: string;
+    transactionNote?: string;
+    isImpostorVpa?: boolean;
+    impersonatedEntity?: string;
+  };
+  riskScore: number;
+  verdict: 'CRITICAL THREAT' | 'SUSPICIOUS' | 'VERIFIED SAFE';
+  executiveSummary: string;
+  quishingRisk: 'HIGH' | 'MEDIUM' | 'LOW';
+  redirectUrl?: string;
 }
