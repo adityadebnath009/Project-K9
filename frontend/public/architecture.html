@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1400px;
+    height: 980px;
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    color: #1e293b;
+  }
+  
+  .header-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 800;
+    color: #1e3a8a;
+    letter-spacing: -0.5px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .main-container {
+    display: flex;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .flow-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .side-col {
+    width: 130px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* Layers */
+  .card {
+    border-radius: 8px;
+    border: 1.5px solid;
+    padding: 10px 14px;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .card-header {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* 1. Client UI Layer - Blue */
+  .layer-client {
+    background: #eff6ff;
+    border-color: #93c5fd;
+  }
+  .layer-client .card-header { color: #1e40af; }
+  
+  .chips-row {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+  }
+  .chip {
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 6px 4px;
+    text-align: center;
+  }
+  .chip-title { font-size: 11px; font-weight: 700; color: #1e3a8a; }
+  .chip-sub { font-size: 9px; color: #64748b; margin-top: 2px; }
+
+  /* Connector arrow */
+  .arrow-down {
+    text-align: center;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: bold;
+    margin: -6px 0;
+  }
+
+  /* 2. Gateway Layer - Indigo */
+  .layer-gateway {
+    background: #f5f3ff;
+    border-color: #c4b5fd;
+  }
+  .layer-gateway .card-header { color: #5b21b6; }
+  .gateway-content {
+    background: #ffffff;
+    border: 1px solid #ddd6fe;
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .gateway-text { font-size: 12px; font-weight: 700; color: #4c1d95; }
+  .gateway-sub { font-size: 10px; color: #6b21a8; }
+
+  /* 3. Engine Swarm - Emerald / Green */
+  .layer-engines {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+  }
+  .layer-engines .card-header { color: #065f46; }
+  
+  .engine-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+  .engine-box {
+    background: #ffffff;
+    border: 1px solid #6ee7b7;
+    border-radius: 6px;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .engine-name { font-size: 11px; font-weight: 700; color: #047857; margin-bottom: 4px; }
+  .engine-details { font-size: 9.5px; color: #334155; line-height: 1.35; }
+  .engine-badge {
+    margin-top: 6px;
+    display: inline-block;
+    background: #d1fae5;
+    color: #065f46;
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 2px 4px;
+    border-radius: 4px;
+    text-align: center;
+  }
+
+  /* 4. Ledger & Feeds - Amber/Yellow */
+  .layer-ledger {
+    background: #fffbeb;
+    border-color: #fde68a;
+  }
+  .layer-ledger .card-header { color: #92400e; }
+  .ledger-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .ledger-box {
+    background: #ffffff;
+    border: 1px solid #fcd34d;
+    border-radius: 6px;
+    padding: 6px 10px;
+  }
+  .ledger-name { font-size: 11px; font-weight: 700; color: #b45309; }
+  .ledger-desc { font-size: 9.5px; color: #475569; margin-top: 2px; }
+
+  /* 5. Output - Teal */
+  .layer-output {
+    background: #f0fdfa;
+    border-color: #99f6e4;
+  }
+  .layer-output .card-header { color: #115e59; }
+  .output-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .output-box {
+    background: #ffffff;
+    border: 1px solid #5eead4;
+    border-radius: 6px;
+    padding: 8px 12px;
+  }
+  .output-name { font-size: 11.5px; font-weight: 700; color: #0f766e; }
+  .output-desc { font-size: 10px; color: #334155; margin-top: 3px; line-height: 1.35; }
+
+  /* Side Fallback Box - Rose */
+  .side-box {
+    background: #fff1f2;
+    border: 1.5px dashed #f43f5e;
+    border-radius: 8px;
+    padding: 16px 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 80%;
+  }
+  .side-icon { font-size: 20px; margin-bottom: 6px; }
+  .side-title { font-size: 11px; font-weight: 800; color: #be123c; line-height: 1.2; }
+  .side-desc { font-size: 9px; color: #881337; margin-top: 6px; line-height: 1.3; }
+</style>
+</head>
+<body>
+
+  <div class="header-title">
+    🛡️ K9-SENTINEL TECHNICAL ARCHITECTURE
+  </div>
+
+  <div class="main-container">
+    <div class="flow-col">
+      
+      <!-- Tier 1: Client & Ingestion Layer -->
+      <div class="card layer-client">
+        <div class="card-header">
+          <span>🖥️ 1. Multi-Modal Ingestion & Client Experience Layer</span>
+        </div>
+        <div class="chips-row">
+          <div class="chip">
+            <div class="chip-title">Unified Web Scanner</div>
+            <div class="chip-sub">Single-Target Deep Scan</div>
+          </div>
+          <div class="chip">
+            <div class="chip-title">Certificate Trust</div>
+            <div class="chip-sub">Domain & Raw PEM Audit</div>
+          </div>
+          <div class="chip">
+            <div class="chip-title">Heuristics & Posture</div>
+            <div class="chip-sub">Homoglyphs & Headers</div>
+          </div>
+          <div class="chip">
+            <div class="chip-title">Camera QR Guard</div>
+            <div class="chip-sub">Live Video Stream Quishing</div>
+          </div>
+          <div class="chip">
+            <div class="chip-title">Community Radar</div>
+            <div class="chip-sub">Consensus & Web3 Ledger</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow-down">▼ REST API / WebSocket Telemetry Dispatch</div>
+
+      <!-- Tier 2: Master Orchestration Gateway -->
+      <div class="card layer-gateway">
+        <div class="card-header">
+          <span>⚙️ 2. API & Unified Threat Orchestration Gateway</span>
+        </div>
+        <div class="gateway-content">
+          <div>
+            <div class="gateway-text">FastAPI High-Throughput Async Controller (/api/v1/scan)</div>
+            <div class="gateway-sub">Typed Input Sanitization & Concurrent Task Distribution Engine</div>
+          </div>
+          <div style="font-size: 10px; font-weight: 700; color: #6b21a8; background: #ede9fe; padding: 4px 8px; border-radius: 4px;">
+            asyncio.gather() · &lt;100ms Latency
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow-down">▼ 5 Concurrent Inspection Pipelines</div>
+
+      <!-- Tier 3: 5-Pillar Engine Swarm -->
+      <div class="card layer-engines">
+        <div class="card-header">
+          <span>⚡ 3. Multi-Vector Deep Threat & Cryptographic Intelligence Swarm</span>
+        </div>
+        <div class="engine-grid">
+          <div class="engine-box">
+            <div class="engine-name">1. Cryptographic Trust</div>
+            <div class="engine-details">• eMudhra Bug 2083449 Solver<br>• Wayne's DLP Crack (d=4, &lt;1ms)<br>• X.509 Chain & SANs Telemetry<br>• ROCA & RSA 2048+ Key Audit</div>
+            <div class="engine-badge">NIST P-384 Proof</div>
+          </div>
+          <div class="engine-box">
+            <div class="engine-name">2. Phishing & Brand</div>
+            <div class="engine-details">• Levenshtein Distance-1 Typo<br>• Cyrillic Punycode (xn--)<br>• Cross-Origin DOM Form Theft<br>• Shannon Entropy & DGA Alerts</div>
+            <div class="engine-badge">5,000+ Brands</div>
+          </div>
+          <div class="engine-box">
+            <div class="engine-name">3. Camera Quishing</div>
+            <div class="engine-details">• HTML5 getUserMedia Video HUD<br>• pyzbar C-Library Image Decode<br>• NPCI UPI Linking Spec Parser<br>• Impostor VPA Fraud Engine</div>
+            <div class="engine-badge">Dual-Mode Cam</div>
+          </div>
+          <div class="engine-box">
+            <div class="engine-name">4. Security Posture</div>
+            <div class="engine-details">• 100-pt Header Scorecard (A-F)<br>• HSTS Preload & CSP Defense<br>• Sensitive Path Probing<br>• 4-Standard Regulatory Matrix</div>
+            <div class="engine-badge">IT Act / CERT-In</div>
+          </div>
+          <div class="engine-box">
+            <div class="engine-name">5. AI Scam Analyst</div>
+            <div class="engine-details">• Groq Llama 3.3 70B Versatile<br>• Coercive Urgency NLP Lures<br>• Phone, UPI & SMS Extractor<br>• MITRE ATT&CK T1566/T1598</div>
+            <div class="engine-badge">Llama 3.3 / NLP</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow-down">▼ On-Chain Verification & Feed Syndication</div>
+
+      <!-- Tier 4: Consensus & Feeds -->
+      <div class="card layer-ledger">
+        <div class="card-header">
+          <span>🔗 4. Decentralized Web3 Ledger & Threat Telemetry Feeds</span>
+        </div>
+        <div class="ledger-grid">
+          <div class="ledger-box">
+            <div class="ledger-name">Ethereum Sepolia Web3 Registry</div>
+            <div class="ledger-desc">ThreatRegistry.sol smart contract storing tamper-proof keccak256 hash commitments.</div>
+          </div>
+          <div class="ledger-box">
+            <div class="ledger-name">GDPR Privacy Off-Chain Design</div>
+            <div class="ledger-desc">Sensitive user PII, URLs, and SMS content kept strictly off-chain; cryptographic proof on-chain.</div>
+          </div>
+          <div class="ledger-box">
+            <div class="ledger-name">URLhaus & STIX 2.1 Syndication</div>
+            <div class="ledger-desc">abuse.ch live blacklist ingestion and automated STIX 2.1 threat telemetry bundle export.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow-down">▼ Plain-English Actionable Presentation</div>
+
+      <!-- Tier 5: Output Layer -->
+      <div class="card layer-output">
+        <div class="card-header">
+          <span>💡 5. Responsible Layman-First AI Translation & User Action Routing</span>
+        </div>
+        <div class="output-grid">
+          <div class="output-box">
+            <div class="output-name">Layman-First 3-Question Framework</div>
+            <div class="output-desc">
+              1. <b>What is this?</b> (Clear entity/service identification)<br>
+              2. <b>Is it safe or a scam?</b> (Zero-jargon definitive verdict)<br>
+              3. <b>What should I do right now?</b> (Clear anti-panic safety steps)
+            </div>
+          </div>
+          <div class="output-box">
+            <div class="output-name">Emergency Helpline & Technical Transparency</div>
+            <div class="output-desc">
+              • Instant 1-click routing to <b>National Cyber Helpline 1930</b> & <b>cybercrime.gov.in</b><br>
+              • Deep technical evidence (d=4, X.509, CSP, MITRE) neatly expandable for auditors.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Side Column: Zero-DB Offline Fallback -->
+    <div class="side-col">
+      <div class="side-box">
+        <div class="side-icon">💾</div>
+        <div class="side-title">Zero-DB Offline Fallback</div>
+        <div class="side-desc">
+          Embedded py-evm local node & thread-safe in-memory cache.<br><br>
+          100% resilient during network disconnects or air-gapped demo runs.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
