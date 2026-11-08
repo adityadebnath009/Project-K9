@@ -17,10 +17,19 @@ from models.schemas import (
     Web3CommitmentRecord,
     RiskTier,
     InputType,
+    CommunityIncident,
+    CreateIncidentRequest,
+    VoteIncidentRequest,
 )
 from engine.orchestrator import orchestrate_full_scan, orchestrate_qr_scan
 from engine.threat.ai_analyst import generate_threat_ai_briefing
 from engine.web3.registry_client import default_registry_client
+from engine.intel.community_store import (
+    get_all_incidents,
+    get_incident_by_id,
+    add_incident,
+    vote_on_incident,
+)
 from scenarios.demo_cases import list_benchmark_scenarios, run_benchmark_scenario
 
 app = FastAPI(
@@ -53,11 +62,13 @@ class QrScanRequest(BaseModel):
 
 
 @app.get("/", tags=["System"])
+@app.get("/health", tags=["System"])
 async def root_health_check() -> dict[str, Any]:
     """Health check and core intelligence capabilities."""
     return {
         "service": "K9 Sentinel AI",
         "status": "OPERATIONAL",
+        "online": True,
         "version": "1.0.0",
         "engine": {
             "phase1_crypto": "Active (eMudhra Bug 2083449 + OneCRL + RSA + CT)",
@@ -200,3 +211,47 @@ async def export_stix_threat_indicators() -> dict[str, Any]:
         "id": "bundle--k9-sentinel-threat-telemetry",
         "objects": stix_objects,
     }
+
+
+# ---------------------------------------------------------------------
+# Phase 6 & Collaborative Radar: Community Incident Feed & Voting
+# ---------------------------------------------------------------------
+@app.get("/api/v1/incidents", response_model=list[CommunityIncident], tags=["Community Radar"])
+async def list_community_incidents() -> list[CommunityIncident]:
+    """
+    Returns live community-reported threat incidents with user experience details,
+    victim impact status, and countdown-style consensus vote counts.
+    """
+    return get_all_incidents()
+
+
+@app.post("/api/v1/incidents", response_model=CommunityIncident, tags=["Community Radar"], status_code=status.HTTP_201_CREATED)
+async def report_community_incident(incident: CreateIncidentRequest) -> CommunityIncident:
+    """
+    Submits a new community scam/phishing incident describing what the user experienced,
+    problems encountered, and victim status.
+    """
+    try:
+        return add_incident(incident)
+    except (ValueError, TypeError) as err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
+
+
+@app.post("/api/v1/incidents/{incident_id}/vote", response_model=CommunityIncident, tags=["Community Radar"])
+async def vote_community_incident(incident_id: str, req: VoteIncidentRequest) -> CommunityIncident:
+    """
+    Casts a categorical vote ('fake' vs 'legit') on a community incident and updates the consensus verdict.
+    """
+    if req.vote not in ("fake", "legit"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vote must be either 'fake' (Yes, it's fake) or 'legit' (No, it's not fake).",
+        )
+
+    updated = vote_on_incident(incident_id, req.vote)
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Incident with id '{incident_id}' not found.",
+        )
+    return updated

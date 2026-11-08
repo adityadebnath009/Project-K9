@@ -208,3 +208,78 @@ def test_scan_empty_input_rejected_by_validation():
     """POST /api/v1/scan with whitespace is rejected by Pydantic validation (422)."""
     resp = client.post("/api/v1/scan", json={"target": "   "})
     assert resp.status_code == 422
+
+
+# -------------------------------------------------------------
+# Tests 16 - 20: Community Incidents, Voting & Health Aliases
+# -------------------------------------------------------------
+def test_health_check_endpoint():
+    """GET /health returns online status and operational capabilities."""
+    resp = client.get("/health")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["online"] is True
+    assert data["status"] == "OPERATIONAL"
+    assert data["version"] == "1.0.0"
+
+
+def test_scan_endpoint_accepts_url_field():
+    """POST /api/v1/scan accepts {'url': '...'} sent by frontend."""
+    resp = client.post("/api/v1/scan", json={"url": "https://python.org"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["target"] == "https://python.org"
+    assert data["is_safe"] is True
+
+
+def test_get_community_incidents():
+    """GET /api/v1/incidents returns community reports with victim context and votes."""
+    resp = client.get("/api/v1/incidents")
+    assert resp.status_code == 200
+    incidents = resp.json()
+    assert isinstance(incidents, list)
+    assert len(incidents) >= 4
+
+    first = incidents[0]
+    assert "id" in first
+    assert "target" in first
+    assert "user_experience" in first
+    assert "victim_status" in first
+    assert "fake_votes" in first
+    assert "legit_votes" in first
+    assert "countdown_hours_remaining" in first
+
+
+def test_create_and_vote_community_incident():
+    """POST /api/v1/incidents reports incident, POST /vote increments vote count."""
+    payload = {
+        "target": "https://fake-lottery-gift.xyz",
+        "category": "Gift Card Scam",
+        "reporter": "tester@test.com",
+        "user_experience": "Claimed I won an iPhone, demanded 500 processing fee via UPI.",
+        "victim_status": "Blocked in Time",
+        "initial_vote": "fake",
+    }
+    create_resp = client.post("/api/v1/incidents", json=payload)
+    assert create_resp.status_code == 201
+    created = create_resp.json()
+    inc_id = created["id"]
+    initial_fake = created["fake_votes"]
+
+    # Vote "fake"
+    vote_resp = client.post(f"/api/v1/incidents/{inc_id}/vote", json={"vote": "fake"})
+    assert vote_resp.status_code == 200
+    updated = vote_resp.json()
+    assert updated["fake_votes"] == initial_fake + 1
+
+    # Vote "legit"
+    vote_legit_resp = client.post(f"/api/v1/incidents/{inc_id}/vote", json={"vote": "legit"})
+    assert vote_legit_resp.status_code == 200
+    updated_legit = vote_legit_resp.json()
+    assert updated_legit["legit_votes"] == 1
+
+
+def test_vote_invalid_vote_type_rejected():
+    """POST /api/v1/incidents/{id}/vote with invalid vote returns 400."""
+    resp = client.post("/api/v1/incidents/inc-001/vote", json={"vote": "maybe"})
+    assert resp.status_code == 400

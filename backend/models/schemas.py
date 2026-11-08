@@ -7,7 +7,7 @@ risk classification tiers mandated by the Hack Matrix 2026 problem statement.
 from enum import Enum
 from typing import Any, Optional
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
 
 
 # ---------------------------------------------------------------------
@@ -35,16 +35,54 @@ class InputType(str, Enum):
 # Request Models
 # ---------------------------------------------------------------------
 class ScanRequest(BaseModel):
-    target: str = Field(..., min_length=1, max_length=4096, description="Target URL, domain, or raw SMS/email message text")
+    target: Optional[str] = Field(None, max_length=4096, description="Target URL, domain, or raw SMS/email message text")
+    url: Optional[str] = Field(None, max_length=4096, description="Alias for target when scanning web URLs")
     input_type: InputType = Field(default=InputType.URL, description="Type of input: url, domain, or message")
 
-    @field_validator("target")
+    @model_validator(mode="before")
     @classmethod
-    def strip_whitespace(cls, v: str) -> str:
-        cleaned = v.strip()
-        if not cleaned:
-            raise ValueError("Target input cannot be empty or only whitespace")
-        return cleaned
+    def normalize_target_and_url(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            raw_target = data.get("target") or data.get("url")
+            if not raw_target or not str(raw_target).strip():
+                raise ValueError("Target input cannot be empty or only whitespace")
+            data["target"] = str(raw_target).strip()
+            data["url"] = data["target"]
+        elif isinstance(data, str):
+            cleaned = data.strip()
+            if not cleaned:
+                raise ValueError("Target input cannot be empty or only whitespace")
+            return {"target": cleaned, "url": cleaned, "input_type": InputType.URL}
+        return data
+
+
+class CommunityIncident(BaseModel):
+    id: str
+    target: str
+    domain: str
+    category: str
+    reporter: str
+    timestamp: str
+    user_experience: str
+    victim_status: str = "Blocked in Time"
+    fake_votes: int = 0
+    legit_votes: int = 0
+    consensus_status: str = "Active Verification"
+    countdown_hours_remaining: int = 24
+    stix_bundle: Optional[dict[str, Any]] = None
+
+
+class CreateIncidentRequest(BaseModel):
+    target: str = Field(..., min_length=1)
+    category: str = Field(default="Unclassified Phishing")
+    reporter: Optional[str] = "Anonymous Reporter"
+    user_experience: str = Field(..., min_length=5, description="Description of user experience / problem encountered")
+    victim_status: str = Field(default="Blocked in Time")
+    initial_vote: str = Field(default="fake")
+
+
+class VoteIncidentRequest(BaseModel):
+    vote: str = Field(..., description="'fake' (Yes, it's fake) or 'legit' (No, it's not fake)")
 
 
 # ---------------------------------------------------------------------
