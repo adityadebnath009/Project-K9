@@ -1,15 +1,45 @@
 import { RadarIncident, TargetScanResult, CertificateNode, ThreatVerdict } from '@/types/api';
 import { MOCK_RADAR_INCIDENTS, SCENARIOS } from './mockData';
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+function getNormalizedApiUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim() !== '') {
+    let clean = envUrl.trim();
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = `https://${clean}`;
+    }
+    return clean.replace(/\/+$/, '');
+  }
+
+  // Automatic smart detection in browser when deployed on Render
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname.includes('onrender.com')) {
+      return 'https://k9-sentinel-backend.onrender.com';
+    }
+    return 'http://localhost:8000';
+  }
+
+  return 'http://localhost:8000';
+}
+
+export function getApiBaseUrl(): string {
+  return getNormalizedApiUrl();
+}
+
+export const API_BASE_URL = {
+  toString: () => getNormalizedApiUrl(),
+  valueOf: () => getNormalizedApiUrl(),
+  [Symbol.toPrimitive]: () => getNormalizedApiUrl(),
+} as unknown as string;
 
 export async function checkBackendHealth(): Promise<{ online: boolean; latencyMs?: number; version?: string }> {
   const start = performance.now();
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1200);
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-    const res = await fetch(`${API_BASE_URL}/health`, {
+    const baseUrl = getNormalizedApiUrl();
+    const res = await fetch(`${baseUrl}/health`, {
       signal: controller.signal,
       cache: 'no-store',
     });
@@ -25,7 +55,7 @@ export async function checkBackendHealth(): Promise<{ online: boolean; latencyMs
       };
     }
   } catch {
-    // Backend offline
+    // Backend offline or unreachable
   }
   return { online: false };
 }
