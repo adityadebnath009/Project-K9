@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body {
+    width: 1280px;
+    height: 720px;
+    background: radial-gradient(circle at 10% 20%, #0d1527 0%, #060913 70%, #020408 100%);
+    color: #ffffff;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    padding: 60px 70px;
+  }
+  /* Cyber Grid Background */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(to right, rgba(14, 165, 233, 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(14, 165, 233, 0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 1;
+  }
+  .glow-cyan {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    top: -100px;
+    left: -100px;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.22) 0%, transparent 70%);
+    filter: blur(50px);
+    z-index: 1;
+  }
+  .glow-red {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    bottom: -150px;
+    right: -100px;
+    background: radial-gradient(circle, rgba(239, 68, 68, 0.18) 0%, transparent 70%);
+    filter: blur(60px);
+    z-index: 1;
+  }
+
+  .content-left {
+    position: relative;
+    z-index: 10;
+    width: 58%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(14, 165, 233, 0.12);
+    border: 1px solid rgba(14, 165, 233, 0.4);
+    border-radius: 9999px;
+    color: #38bdf8;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    width: fit-content;
+    margin-bottom: 20px;
+  }
+  .title {
+    font-size: 58px;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -1.5px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #ffffff 40%, #bae6fd 80%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle {
+    font-size: 26px;
+    font-weight: 700;
+    color: #f87171;
+    letter-spacing: 0.5px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .subtitle span {
+    color: #94a3b8;
+    font-weight: 400;
+    font-size: 20px;
+  }
+  
+  .badges-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 30px;
+  }
+  .pill {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(51, 65, 85, 0.8);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(10px);
+  }
+
+  .content-right {
+    position: relative;
+    z-index: 10;
+    width: 42%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mockup-card {
+    position: relative;
+    width: 100%;
+    background: #090d16;
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 35px rgba(239, 68, 68, 0.25);
+    transform: rotate(2deg) scale(1.02);
+  }
+  .mockup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #1e293b;
+  }
+  .badge-danger {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid #ef4444;
+    color: #fca5a5;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+  .score-box {
+    font-size: 32px;
+    font-weight: 900;
+    color: #ef4444;
+    font-family: monospace;
+  }
+  .code-snip {
+    background: #020408;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #38bdf8;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  .floating-pill {
+    position: absolute;
+    bottom: -15px;
+    left: -20px;
+    background: #10b981;
+    color: #022c22;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 800;
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+    transform: rotate(-3deg);
+  }
+</style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <div class="glow-cyan"></div>
+  <div class="glow-red"></div>
+
+  <div class="content-left">
+    <div class="tag">⚡ HACK MATRIX 2026 • HACKTOBER</div>
+    <h1 class="title">K9 SENTINEL AI</h1>
+    <div class="subtitle">
+      PADLOCK ILLUSION <span>➔ UNMASKED</span>
+    </div>
+
+    <div class="badges-grid">
+      <div class="pill">
+        <span style="color:#ef4444;">●</span> Cracked eMudhra (d=4 in &lt;1ms)
+      </div>
+      <div class="pill">
+        <span style="color:#38bdf8;">●</span> Dual-Mode Optical Quishing
+      </div>
+      <div class="pill">
+        <span style="color:#10b981;">●</span> Sepolia Smart Contract Web3
+      </div>
+      <div class="pill">
+        <span style="color:#fbbf24;">●</span> CERT-In & RBI Matrix Audit
+      </div>
+    </div>
+
+    <div style="font-size: 15px; color: #94a3b8; font-weight: 500;">
+      Autonomous Digital Trust & Evidence-Grounded Threat Intelligence
+    </div>
+  </div>
+
+  <div class="content-right">
+    <div class="mockup-card">
+      <div class="mockup-header">
+        <span class="badge-danger">CRITICAL MALICIOUS THREAT</span>
+        <div class="score-box">100/100</div>
+      </div>
+      <div class="code-snip">
+        <div style="color: #64748b; margin-bottom: 4px;">// Discrete Log Attack: Mozilla Bug 2083449</div>
+        <div>Target: NIST P-384 Scalar Curve</div>
+        <div style="color: #4ade80;">Private Key Recovered: d = 4</div>
+        <div style="color: #f87171;">Payee Impersonation: fakeaxis@discom</div>
+      </div>
+      <div style="font-size: 12px; color: #cbd5e1; line-height: 1.4;">
+        <strong>Layman AI Protocol:</strong> Phishing homoglyph detected with fake SSL lock. Immediate disconnection alert.
+      </div>
+      <div class="floating-pill">✓ 100% EVIDENCE GROUNDED</div>
+    </div>
+  </div>
+</body>
+</html>

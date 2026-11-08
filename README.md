@@ -2,6 +2,11 @@
 
 > **Intelligent Digital Trust & Threat Intelligence Platform combining cryptographic trust validation, multi-layered phishing heuristics, and layman-first responsible AI translation.**
 
+[![Live Web App](https://img.shields.io/badge/Live%20Demo-k9--sentinel--frontend.onrender.com-0ea5e9?style=for-the-badge&logo=render)](https://k9-sentinel-frontend.onrender.com)
+[![YouTube Video Walkthrough](https://img.shields.io/badge/YouTube-Video%20Walkthrough%20(2.5m)-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/QbzDJaHshSY)
+[![Backend API](https://img.shields.io/badge/API-FastAPI%20Swagger-10b981?style=for-the-badge&logo=fastapi)](https://k9-sentinel-backend.onrender.com/docs)
+[![Sepolia Smart Contract](https://img.shields.io/badge/Web3-Sepolia%20Contract-627EEA?style=for-the-badge&logo=ethereum)](https://sepolia.etherscan.io/address/0x8A791620dd6260079BF849Dc5567aDC3F2FdC318)
+
 ---
 
 ## 1. Project Name and a One-Line Description
@@ -56,11 +61,14 @@ K9 Sentinel AI bridges deep cryptographic inspection and everyday human decision
 
 ## 4. Demo Links and a Screenshot
 
+* **Video Demo Walkthrough (<3 min):** [Watch on YouTube (https://youtu.be/QbzDJaHshSY)](https://youtu.be/QbzDJaHshSY)
 * **Live Frontend Web App:** [https://k9-sentinel-frontend.onrender.com](https://k9-sentinel-frontend.onrender.com)
 * **Live FastAPI Backend Engine:** [https://k9-sentinel-backend.onrender.com](https://k9-sentinel-backend.onrender.com)
 * **Interactive API Documentation (Swagger UI):** [https://k9-sentinel-backend.onrender.com/docs](https://k9-sentinel-backend.onrender.com/docs)
 * **System Health Endpoint:** [https://k9-sentinel-backend.onrender.com/health](https://k9-sentinel-backend.onrender.com/health)
 * **Sepolia Smart Contract:** [`0x8A791620dd6260079BF849Dc5567aDC3F2FdC318`](https://sepolia.etherscan.io/address/0x8A791620dd6260079BF849Dc5567aDC3F2FdC318)
+
+[![Watch K9 Sentinel AI Video Walkthrough](thumbnail.png)](https://youtu.be/QbzDJaHshSY)
 
 ### Platform Walkthrough & Screenshots
 
